@@ -21,5 +21,4 @@ echo "Connected successfully to Bluehost database!";
 
 // Close connection when finished (optional for scripts that end immediately)
 // mysqli_close($conn);
-//this is a comment
 ?>
