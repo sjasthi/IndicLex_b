@@ -1,6 +1,5 @@
 /* ============================================================
    DictionaryHub — theme.js
-   Handles dark/light mode toggle and persistence
    ============================================================ */
 
 function toggleTheme() {
@@ -11,15 +10,12 @@ function toggleTheme() {
   html.setAttribute('data-bs-theme', next);
   localStorage.setItem('theme', next);
 
-  document.getElementById('themeBtn').textContent =
-    next === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = next === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
 }
 
-// Sync button label on every page load
 document.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('theme') || 'light';
   const btn   = document.getElementById('themeBtn');
-  if (btn) {
-    btn.textContent = saved === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
-  }
+  if (btn) btn.textContent = saved === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
 });
