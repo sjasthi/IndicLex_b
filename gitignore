@@ -1,0 +1,23 @@
+# ============================================================
+# .gitignore — IndicLex / DictionaryHub
+# ============================================================
+
+# Composer dependencies — never commit these
+# Classmates run "composer install" to regenerate locally
+/vendor/
+
+# Composer lock file (optional — remove this line if you want to commit it)
+# composer.lock
+
+# Uploaded files
+/uploads/
+
+# Database test file — should never be on GitHub
+test_db.php
+
+# XAMPP / local environment files
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
