@@ -1,39 +1,39 @@
-<div class="container my-5">
-  <div class="row justify-content-center">
-    <div class="col-md-6">
-      <div class="card shadow-sm pref-card">
-        <div class="card-body p-4">
-          <h2 class="section-title text-center mb-4" style="font-size: 2rem;">Bulk Import Dictionary</h2>
-
-          <?php if (isset($_GET['success'])): ?>
-            <div class="result-block success-block mb-4">
-              <div class="result-block-header">✓ <?php echo intval($_GET["success"]); ?> entries imported<?php if (!empty($_GET["skipped"]) && intval($_GET["skipped"]) > 0): ?>, <?php echo intval($_GET["skipped"]); ?> duplicates skipped<?php endif; ?></div>
-            </div>
-          <?php endif; ?>
-
-          <?php if (isset($_GET['error'])): ?>
-            <div class="result-block error-block mb-4">
-              <div class="result-block-header">⛔ <?php echo htmlspecialchars($_GET['error']); ?></div>
-            </div>
-          <?php endif; ?>
-
-          <form action="index.php?page=import" method="POST" enctype="multipart/form-data">
-            <div class="mb-4">
-              <label for="dictionary_id" class="form-label fw-bold">Target Dictionary ID</label>
-              <input type="number" name="dictionary_id" id="dictionary_id" class="form-control" value="1" required>
-            </div>
-            <div class="mb-4">
-              <label for="dictionary_file" class="form-label fw-bold">Select Excel or CSV File</label>
-              <input type="file" name="dictionary_file" id="dictionary_file" class="form-control" accept=".csv,.xls,.xlsx" required>
-              <small class="text-muted">Format: Column A = Word, Column B = Translation. Header row will be skipped.</small>
-            </div>
-            <div class="d-grid">
-              <button type="submit" class="btn-primary-custom w-100" style="justify-content:center;">Upload and Import</button>
-            </div>
-          </form>
-
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="page-title">Data Import / Export</h2>
+            <p class="text-muted">Bulk upload new dictionary entries or export existing ones.</p>
         </div>
-      </div>
     </div>
-  </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Import Dictionary Data</h5>
+                </div>
+                <div class="card-body">
+                    <form action="index.php?page=import" method="POST" enctype="multipart/form-data">
+                        
+                        <div class="mb-3">
+                            <label for="dictSelect" class="form-label fw-bold">Target Dictionary</label>
+                            <select class="form-select" id="dictSelect" name="dictionary_id" required>
+                                <option value="">-- Select a Dictionary --</option>
+                                <option value="1">Telugu-English</option>
+                                <option value="2">Sanskrit-English</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="fileUpload" class="form-label fw-bold">Upload File</label>
+                            <input class="form-control" type="file" id="fileUpload" name="import_file" accept=".csv, .json, .xlsx" required>
+                            <div class="form-text">Accepted formats: CSV, JSON, Excel.</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Run Import</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
