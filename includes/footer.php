@@ -1,6 +1,6 @@
 <footer class="site-footer">
   <div class="container">
-    <p>© <?php echo date("Y"); ?> IndicLex | ICS 499 Project</p>
+    <p>© <?php echo date("Y"); ?> DictionaryHub | ICS 499 Project</p>
   </div>
 </footer>
 

@@ -1,105 +1,61 @@
 <?php
-// ============================================================
-// pages/import.php — Handles the Excel/CSV import POST
-// ============================================================
-
-require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../includes/db.php';
+// Load Composer's autoloader so we can use PhpSpreadsheet
+require_once 'vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['dictionary_file'])) {
-    header('Location: index.php?page=admin_import');
-    exit;
-}
+echo '<div class="container mt-5">';
+echo '<h2>Import Results</h2>';
 
-$file          = $_FILES['dictionary_file'];
-$dictionary_id = intval($_POST['dictionary_id'] ?? 1);
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['import_file'])) {
+    $dict_id = $_POST['dictionary_id'];
+    $file = $_FILES['import_file'];
 
-// ── File upload error check ──
-if ($file['error'] !== UPLOAD_ERR_OK) {
-    $msg = match($file['error']) {
-        UPLOAD_ERR_INI_SIZE  => 'File too large (server limit).',
-        UPLOAD_ERR_FORM_SIZE => 'File too large (form limit).',
-        UPLOAD_ERR_PARTIAL   => 'File only partially uploaded.',
-        UPLOAD_ERR_NO_FILE   => 'No file selected.',
-        default              => 'Upload error code: ' . $file['error'],
-    };
-    header('Location: index.php?page=admin_import&error=' . urlencode($msg));
-    exit;
-}
+    if ($file['error'] === UPLOAD_ERR_OK) {
+        $filePath = $file['tmp_name'];
+        $fileName = $file['name'];
+        
+        echo "<div class='alert alert-success'>Successfully uploaded: <strong>" . htmlspecialchars($fileName) . "</strong></div>";
 
-try {
-    // ── Ensure the dictionary record exists ──
-    $check_stmt = $db->prepare("SELECT id FROM dictionaries WHERE id = ?");
-    $check_stmt->bind_param("i", $dictionary_id);
-    $check_stmt->execute();
-    $check_stmt->store_result();
+        try {
+            // Let PhpSpreadsheet automatically figure out if it's CSV, XLSX, etc.
+            $spreadsheet = IOFactory::load($filePath);
+            $worksheet = $spreadsheet->getActiveSheet();
+            $rows = $worksheet->toArray();
 
-    if ($check_stmt->num_rows === 0) {
-        $name = 'Dictionary ' . $dictionary_id;
-        $ins  = $db->prepare("INSERT INTO dictionaries (id, name) VALUES (?, ?)");
-        $ins->bind_param("is", $dictionary_id, $name);
-        $ins->execute();
-        $ins->close();
-    }
-    $check_stmt->close();
+            echo "<h4>Data Preview (First 5 Rows):</h4>";
+            echo "<table class='table table-bordered table-striped'>";
+            echo "<thead><tr><th>Word</th><th>Translation</th></tr></thead><tbody>";
 
-    // ── Parse the Excel/CSV file ──
-    $spreadsheet = IOFactory::load($file['tmp_name']);
-    $worksheet   = $spreadsheet->getActiveSheet();
-    $rows        = $worksheet->toArray();
+            // Loop through the rows and show a preview
+            $rowCount = 0;
+            foreach ($rows as $row) {
+                // Skip empty rows
+                if (empty($row[0]) && empty($row[1])) continue;
 
-    // Remove header row
-    array_shift($rows);
+                if ($rowCount < 5) {
+                    echo "<tr>";
+                    echo "<td>" . htmlspecialchars($row[0] ?? '') . "</td>";
+                    echo "<td>" . htmlspecialchars($row[1] ?? '') . "</td>";
+                    echo "</tr>";
+                }
+                $rowCount++;
+            }
+            
+            echo "</tbody></table>";
+            echo "<p>Total valid rows found: <strong>" . $rowCount . "</strong></p>";
+            echo "<div class='alert alert-warning'>Database insertion is currently bypassed until tables are created.</div>";
+            echo '<a href="index.php?page=admin_import" class="btn btn-secondary">Go Back</a>';
 
-    // ── Prepare statements ──
-    $check_dup = $db->prepare("
-        SELECT id FROM dictionary_entries
-        WHERE dictionary_id = ? AND word = ?
-    ");
-
-    $stmt = $db->prepare("
-        INSERT INTO dictionary_entries (dictionary_id, word, translation)
-        VALUES (?, ?, ?)
-    ");
-
-    $import_count  = 0;
-    $skipped_count = 0;
-
-    foreach ($rows as $row) {
-        $word        = isset($row[0]) ? trim((string)$row[0]) : '';
-        $translation = isset($row[1]) ? trim((string)$row[1]) : '';
-
-        // Skip empty rows
-        if ($word === '' || $translation === '') continue;
-
-        // Check for duplicate before inserting
-        $check_dup->bind_param("is", $dictionary_id, $word);
-        $check_dup->execute();
-        $check_dup->store_result();
-
-        if ($check_dup->num_rows > 0) {
-            $skipped_count++;
-            continue;
+        } catch (Exception $e) {
+            echo "<div class='alert alert-danger'>Error reading file: " . $e->getMessage() . "</div>";
         }
-
-        $stmt->bind_param("iss", $dictionary_id, $word, $translation);
-        $stmt->execute();
-        $import_count++;
+    } else {
+        echo "<div class='alert alert-danger'>File upload failed. Error code: " . $file['error'] . "</div>";
     }
-
-    $check_dup->close();
-    $stmt->close();
-
-    // ── Redirect back with results ──
-    $params = 'success=' . $import_count . '&skipped=' . $skipped_count;
-    header('Location: index.php?page=admin_import&' . $params);
-    exit;
-
-} catch (Exception $e) {
-    $msg = 'Error processing file: ' . $e->getMessage();
-    header('Location: index.php?page=admin_import&error=' . urlencode($msg));
-    exit;
+} else {
+    echo "<div class='alert alert-danger'>No file uploaded or invalid request.</div>";
 }
+
+echo '</div>';
 ?>
