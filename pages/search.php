@@ -46,9 +46,9 @@ if ($query !== '') {
     };
 
     // ── Build WHERE clause ──
-    // Search across both word (Telugu) and translation (English)
+    // Search across English word, Telugu and Hindi translations
     if ($dict_id === 'all' || $dict_id === '') {
-        $where      = "(de.word LIKE ? OR de.translation LIKE ? OR de.transliteration LIKE ?)";
+        $where      = "(de.word LIKE ? OR de.telugu LIKE ? OR de.hindi LIKE ? OR de.transliteration LIKE ?)";
         $count_sql  = "SELECT COUNT(*) AS total
                        FROM dictionary_entries de
                        WHERE {$where}";
@@ -59,21 +59,19 @@ if ($query !== '') {
                        ORDER BY de.word ASC
                        LIMIT ? OFFSET ?";
 
-        // Count query
         $count_stmt = $db->prepare($count_sql);
-        $count_stmt->bind_param('sss', $pattern, $pattern, $pattern);
+        $count_stmt->bind_param('ssss', $pattern, $pattern, $pattern, $pattern);
         $count_stmt->execute();
         $total = $count_stmt->get_result()->fetch_assoc()['total'];
         $count_stmt->close();
 
-        // Results query
         $limit = RESULTS_PER_PAGE;
-        $stmt = $db->prepare($result_sql);
-        $stmt->bind_param('sssii', $pattern, $pattern, $pattern, $limit, $offset);
+        $stmt  = $db->prepare($result_sql);
+        $stmt->bind_param('ssssii', $pattern, $pattern, $pattern, $pattern, $limit, $offset);
 
     } else {
         $dict_id_int = intval($dict_id);
-        $where       = "(de.word LIKE ? OR de.translation LIKE ? OR de.transliteration LIKE ?) AND de.dictionary_id = ?";
+        $where       = "(de.word LIKE ? OR de.telugu LIKE ? OR de.hindi LIKE ? OR de.transliteration LIKE ?) AND de.dictionary_id = ?";
         $count_sql   = "SELECT COUNT(*) AS total
                         FROM dictionary_entries de
                         WHERE {$where}";
@@ -84,17 +82,15 @@ if ($query !== '') {
                         ORDER BY de.word ASC
                         LIMIT ? OFFSET ?";
 
-        // Count query
         $count_stmt = $db->prepare($count_sql);
-        $count_stmt->bind_param('sssi', $pattern, $pattern, $pattern, $dict_id_int);
+        $count_stmt->bind_param('ssssi', $pattern, $pattern, $pattern, $pattern, $dict_id_int);
         $count_stmt->execute();
         $total = $count_stmt->get_result()->fetch_assoc()['total'];
         $count_stmt->close();
 
-        // Results query
         $limit = RESULTS_PER_PAGE;
-        $stmt = $db->prepare($result_sql);
-        $stmt->bind_param('sssiii', $pattern, $pattern, $pattern, $dict_id_int, $limit, $offset);
+        $stmt  = $db->prepare($result_sql);
+        $stmt->bind_param('ssssiii', $pattern, $pattern, $pattern, $pattern, $dict_id_int, $limit, $offset);
     }
 
     $stmt->execute();
@@ -132,7 +128,7 @@ function page_url($p, $q, $mode, $dict_id) {
     <div class="page-header">
       <div class="section-label">Discover</div>
       <h1 class="page-title">Search Dictionary</h1>
-      <p class="page-subtitle">Search Telugu words or English translations across your dictionaries.</p>
+      <p class="page-subtitle">Search English words with Telugu and Hindi translations across your dictionaries.</p>
     </div>
 
     <!-- ── SEARCH FORM ── -->
@@ -260,9 +256,21 @@ function page_url($p, $q, $mode, $dict_id) {
                 </div>
               </div>
 
-              <p class="result-definition">
-                <?php echo highlight($entry['translation'], $query); ?>
-              </p>
+              <!-- Telugu translation -->
+              <?php if (!empty($entry['telugu'])): ?>
+                <div class="result-translation-row">
+                  <span class="translation-lang-badge telugu-badge">Telugu</span>
+                  <span class="result-definition"><?php echo highlight($entry['telugu'], $query); ?></span>
+                </div>
+              <?php endif; ?>
+
+              <!-- Hindi translation -->
+              <?php if (!empty($entry['hindi'])): ?>
+                <div class="result-translation-row">
+                  <span class="translation-lang-badge hindi-badge">Hindi</span>
+                  <span class="result-definition"><?php echo highlight($entry['hindi'], $query); ?></span>
+                </div>
+              <?php endif; ?>
 
               <?php if (!empty($entry['example_source'])): ?>
                 <div class="result-examples">
