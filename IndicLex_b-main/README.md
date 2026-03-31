@@ -1,2 +1,0 @@
-# indiclex
-Management of Dictionaries
