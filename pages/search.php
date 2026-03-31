@@ -3,16 +3,22 @@
 // pages/search.php — Search Interface + Results + Pagination
 // ============================================================
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/preferences_helper.php';
+
+// ── Load preferences ─────────────────────────────────────────
+$prefs = load_all_preferences($db, null);
 
 // ── CONFIG ──────────────────────────────────────────────────
-define('RESULTS_PER_PAGE', 10);
+// Results per page comes from preferences (cookie → DB → default)
+$results_per_page = $prefs['results_per_page'];
 
 // ── GET PARAMETERS ──────────────────────────────────────────
 $query       = trim($_GET['q']           ?? '');
 $mode        = $_GET['mode']             ?? 'substring';
-$dict_id     = $_GET['dictionary_id']   ?? 'all';
+// Use saved default dictionary if none selected in URL
+$dict_id     = $_GET['dictionary_id']   ?? $prefs['default_dict'];
 $page        = max(1, intval($_GET['p'] ?? 1));
-$offset      = ($page - 1) * RESULTS_PER_PAGE;
+$offset      = ($page - 1) * $results_per_page;
 
 // Validate mode
 $valid_modes = ['exact', 'prefix', 'suffix', 'substring'];
@@ -65,7 +71,7 @@ if ($query !== '') {
         $total = $count_stmt->get_result()->fetch_assoc()['total'];
         $count_stmt->close();
 
-        $limit = RESULTS_PER_PAGE;
+        $limit = $results_per_page;
         $stmt  = $db->prepare($result_sql);
         $stmt->bind_param('ssssii', $pattern, $pattern, $pattern, $pattern, $limit, $offset);
 
@@ -88,7 +94,7 @@ if ($query !== '') {
         $total = $count_stmt->get_result()->fetch_assoc()['total'];
         $count_stmt->close();
 
-        $limit = RESULTS_PER_PAGE;
+        $limit = $results_per_page;
         $stmt  = $db->prepare($result_sql);
         $stmt->bind_param('ssssiii', $pattern, $pattern, $pattern, $pattern, $dict_id_int, $limit, $offset);
     }
@@ -100,7 +106,7 @@ if ($query !== '') {
     }
     $stmt->close();
 
-    $total_pages = ceil($total / RESULTS_PER_PAGE);
+    $total_pages = ceil($total / $results_per_page);
 }
 
 // ── Helper: highlight matched term in result ─────────────────
@@ -195,6 +201,8 @@ function page_url($p, $q, $mode, $dict_id) {
           ];
           echo $hints[$mode];
           ?>
+          &nbsp;·&nbsp; Showing <strong><?php echo $results_per_page; ?></strong> results per page
+          — <a href="index.php?page=preferences" style="color:var(--gold);">change in Preferences</a>
         </div>
       </form>
     </div>

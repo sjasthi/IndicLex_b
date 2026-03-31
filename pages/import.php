@@ -1,4 +1,5 @@
 <?php
+<<<<<<< HEAD
 // ============================================================
 // pages/import.php — English | Telugu | Hindi import
 // Teacher's file format: Col A=English, Col B=Telugu, Col C=Hindi
@@ -7,30 +8,27 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../includes/db.php';
+=======
+// Load Composer's autoloader so we can use PhpSpreadsheet
+require_once 'vendor/autoload.php';
+>>>>>>> 33931c5f0db864e2793ffb238ac1f1cb1057f8f4
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_FILES['dictionary_file'])) {
-    header('Location: index.php?page=admin_import');
-    exit;
-}
+echo '<div class="container mt-5">';
+echo '<h2>Import Results</h2>';
 
-$file          = $_FILES['dictionary_file'];
-$dictionary_id = intval($_POST['dictionary_id'] ?? 1);
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['import_file'])) {
+    $dict_id = $_POST['dictionary_id'];
+    $file = $_FILES['import_file'];
 
-// ── File upload error check ──
-if ($file['error'] !== UPLOAD_ERR_OK) {
-    $msg = match($file['error']) {
-        UPLOAD_ERR_INI_SIZE  => 'File too large (server limit).',
-        UPLOAD_ERR_FORM_SIZE => 'File too large (form limit).',
-        UPLOAD_ERR_PARTIAL   => 'File only partially uploaded.',
-        UPLOAD_ERR_NO_FILE   => 'No file selected.',
-        default              => 'Upload error code: ' . $file['error'],
-    };
-    header('Location: index.php?page=admin_import&error=' . urlencode($msg));
-    exit;
-}
+    if ($file['error'] === UPLOAD_ERR_OK) {
+        $filePath = $file['tmp_name'];
+        $fileName = $file['name'];
+        
+        echo "<div class='alert alert-success'>Successfully uploaded: <strong>" . htmlspecialchars($fileName) . "</strong></div>";
 
+<<<<<<< HEAD
 try {
     // ── Ensure the dictionary record exists ──
     $check_dict = $db->prepare("SELECT id FROM dictionaries WHERE id = ?");
@@ -114,5 +112,47 @@ try {
     $msg = 'Error: ' . $e->getMessage();
     header('Location: index.php?page=admin_import&error=' . urlencode($msg));
     exit;
+=======
+        try {
+            // Let PhpSpreadsheet automatically figure out if it's CSV, XLSX, etc.
+            $spreadsheet = IOFactory::load($filePath);
+            $worksheet = $spreadsheet->getActiveSheet();
+            $rows = $worksheet->toArray();
+
+            echo "<h4>Data Preview (First 5 Rows):</h4>";
+            echo "<table class='table table-bordered table-striped'>";
+            echo "<thead><tr><th>Word</th><th>Translation</th></tr></thead><tbody>";
+
+            // Loop through the rows and show a preview
+            $rowCount = 0;
+            foreach ($rows as $row) {
+                // Skip empty rows
+                if (empty($row[0]) && empty($row[1])) continue;
+
+                if ($rowCount < 5) {
+                    echo "<tr>";
+                    echo "<td>" . htmlspecialchars($row[0] ?? '') . "</td>";
+                    echo "<td>" . htmlspecialchars($row[1] ?? '') . "</td>";
+                    echo "</tr>";
+                }
+                $rowCount++;
+            }
+            
+            echo "</tbody></table>";
+            echo "<p>Total valid rows found: <strong>" . $rowCount . "</strong></p>";
+            echo "<div class='alert alert-warning'>Database insertion is currently bypassed until tables are created.</div>";
+            echo '<a href="index.php?page=admin_import" class="btn btn-secondary">Go Back</a>';
+
+        } catch (Exception $e) {
+            echo "<div class='alert alert-danger'>Error reading file: " . $e->getMessage() . "</div>";
+        }
+    } else {
+        echo "<div class='alert alert-danger'>File upload failed. Error code: " . $file['error'] . "</div>";
+    }
+} else {
+    echo "<div class='alert alert-danger'>No file uploaded or invalid request.</div>";
+>>>>>>> 33931c5f0db864e2793ffb238ac1f1cb1057f8f4
 }
+
+echo '</div>';
 ?>
