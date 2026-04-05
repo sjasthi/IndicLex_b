@@ -1,0 +1,128 @@
+/* ============================================================
+   admin.css — Styles only for admin pages
+   ============================================================ */
+
+/* ── ADMIN BODY ── */
+.admin-body {
+  background: #f0f2f5;
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+}
+
+/* ── ADMIN NAVBAR ── */
+.admin-navbar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: #1a1a2e;
+  padding: 0 1.5rem;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-wrap: wrap;
+}
+
+.admin-navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.admin-badge {
+  background: #c9a84c;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.admin-site-name {
+  color: #fff;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.admin-nav-links {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.admin-nav-link {
+  display: inline-block;
+  color: rgba(255,255,255,0.6);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 0.4rem 0.85rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.admin-nav-link:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.admin-nav-link.active { color: #fff; background: rgba(201,168,76,0.25); }
+
+.admin-navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.admin-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  font-size: 0.82rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 50px;
+}
+
+.admin-role-tag {
+  background: #c9a84c;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.admin-logout-btn {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.82rem;
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.15);
+  padding: 0.3rem 0.75rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.admin-logout-btn:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
+
+/* ── ADMIN FOOTER ── */
+.admin-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  font-size: 0.82rem;
+  color: #999;
+  border-top: 1px solid #e0e0e0;
+  margin-top: 3rem;
+  background: #fff;
+}

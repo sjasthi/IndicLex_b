@@ -807,3 +807,159 @@ body {
   from { opacity: 0; transform: translateY(-16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── LOGIN PAGE ── */
+.login-section {
+  min-height: 85vh;
+  display: flex;
+  align-items: center;
+  padding: 2rem 0;
+}
+
+.login-card {
+  background: var(--cream);
+  border: 1.5px solid rgba(0,0,0,0.08);
+  border-radius: 24px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+}
+
+[data-bs-theme="dark"] .login-card { border-color: rgba(255,255,255,0.08); }
+
+.login-header { text-align: center; margin-bottom: 2rem; }
+.login-logo   { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.login-title  { font-family: 'Playfair Display', serif; font-size: 1.75rem; font-weight: 700; margin: 0; }
+.login-subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 0.25rem; }
+
+.login-error {
+  background: rgba(224,90,58,0.08);
+  border: 1px solid rgba(224,90,58,0.2);
+  color: var(--accent);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-size: 0.88rem;
+  margin-bottom: 1.25rem;
+}
+
+.login-field { margin-bottom: 1.25rem; }
+.login-label { display: block; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.4rem; }
+
+.login-input {
+  width: 100%;
+  border: 1.5px solid rgba(0,0,0,0.12);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  font-family: 'DM Sans', sans-serif;
+  background: transparent;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+[data-bs-theme="dark"] .login-input { border-color: rgba(255,255,255,0.12); }
+.login-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.15); }
+
+.login-btn {
+  width: 100%;
+  background: var(--ink);
+  color: var(--cream);
+  border: none;
+  border-radius: 10px;
+  padding: 0.85rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+  margin-top: 0.5rem;
+}
+
+.login-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+.login-footer { text-align: center; margin-top: 1.5rem; font-size: 0.85rem; }
+.login-footer a { color: var(--muted); text-decoration: none; }
+.login-footer a:hover { color: var(--gold); }
+
+/* ── NAV USER BADGE ── */
+.nav-user-badge {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+/* ── ADMIN DASHBOARD ── */
+.admin-wrap { min-height: 80vh; }
+
+.admin-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.admin-title    { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; margin: 0; }
+.admin-subtitle { color: var(--muted); font-size: 0.9rem; margin: 0.25rem 0 0; }
+.admin-header-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+.admin-stat-card {
+  background: var(--cream);
+  border: 1.5px solid rgba(0,0,0,0.08);
+  border-radius: 20px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+[data-bs-theme="dark"] .admin-stat-card { border-color: rgba(255,255,255,0.08); }
+.admin-stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,0.07); }
+
+.admin-stat-icon  { font-size: 1.75rem; margin-bottom: 0.5rem; }
+.admin-stat-num   { font-family: 'Playfair Display', serif; font-size: 2.25rem; font-weight: 700; color: var(--gold); line-height: 1; }
+.admin-stat-label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-top: 0.3rem; }
+
+.admin-card {
+  background: var(--cream);
+  border: 1.5px solid rgba(0,0,0,0.08);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+[data-bs-theme="dark"] .admin-card { border-color: rgba(255,255,255,0.08); }
+
+.admin-card-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  background: rgba(0,0,0,0.02);
+}
+
+[data-bs-theme="dark"] .admin-card-header { border-color: rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); }
+.admin-card-header h5 { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; margin: 0; }
+.admin-card-body { padding: 1.25rem 1.5rem; }
+
+.admin-word-count { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--gold); }
+
+.admin-progress { height: 6px; background: rgba(0,0,0,0.08); border-radius: 3px; overflow: hidden; margin-bottom: 2px; }
+[data-bs-theme="dark"] .admin-progress { background: rgba(255,255,255,0.08); }
+.admin-progress-bar { height: 100%; background: var(--gold); border-radius: 3px; transition: width 0.6s ease; }
+
+.lang-breakdown { display: flex; flex-direction: column; gap: 0.75rem; }
+.lang-row { display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; }
+.lang-name  { flex: 1; font-weight: 500; }
+.lang-count { color: var(--muted); }
+.lang-pct   { font-weight: 700; color: var(--gold); min-width: 35px; text-align: right; }
+
+.admin-recent-list { list-style: none; padding: 0; margin: 0; }
+.admin-recent-item {
+  padding: 0.65rem 1.5rem;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+[data-bs-theme="dark"] .admin-recent-item { border-color: rgba(255,255,255,0.05); }
+.admin-recent-item:last-child { border-bottom: none; }
+.admin-recent-word  { font-weight: 600; font-size: 0.9rem; min-width: 100px; }
+.admin-recent-trans { color: var(--muted); font-size: 0.85rem; }

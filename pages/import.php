@@ -1,5 +1,4 @@
 <?php
-<<<<<<< HEAD
 // ============================================================
 // pages/import.php — English | Telugu | Hindi import
 // Teacher's file format: Col A=English, Col B=Telugu, Col C=Hindi
@@ -8,10 +7,8 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../includes/db.php';
-=======
 // Load Composer's autoloader so we can use PhpSpreadsheet
 require_once 'vendor/autoload.php';
->>>>>>> 33931c5f0db864e2793ffb238ac1f1cb1057f8f4
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
@@ -28,7 +25,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['import_file'])) {
         
         echo "<div class='alert alert-success'>Successfully uploaded: <strong>" . htmlspecialchars($fileName) . "</strong></div>";
 
-<<<<<<< HEAD
 try {
     // ── Ensure the dictionary record exists ──
     $check_dict = $db->prepare("SELECT id FROM dictionaries WHERE id = ?");
@@ -112,7 +108,6 @@ try {
     $msg = 'Error: ' . $e->getMessage();
     header('Location: index.php?page=admin_import&error=' . urlencode($msg));
     exit;
-=======
         try {
             // Let PhpSpreadsheet automatically figure out if it's CSV, XLSX, etc.
             $spreadsheet = IOFactory::load($filePath);
@@ -151,7 +146,6 @@ try {
     }
 } else {
     echo "<div class='alert alert-danger'>No file uploaded or invalid request.</div>";
->>>>>>> 33931c5f0db864e2793ffb238ac1f1cb1057f8f4
 }
 
 echo '</div>';

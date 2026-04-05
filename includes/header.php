@@ -1,14 +1,16 @@
 <?php
 // ============================================================
 // includes/header.php
-// Loads preferences BEFORE rendering so theme is applied
-// instantly — no flash of wrong theme
+// Loads preferences BEFORE rendering — no theme flash
 // ============================================================
-require_once __DIR__ . '/preferences_helper.php';
+if (!function_exists('load_all_preferences')) {
+    require_once __DIR__ . '/preferences_helper.php';
+}
+if (!function_exists('is_admin')) {
+    require_once __DIR__ . '/auth.php';
+}
 
-// Load preferences: cookies first, then DB, then defaults
-$prefs = load_all_preferences($db ?? null, null);
-
+$prefs         = load_all_preferences($db ?? null, null);
 $current_theme = $prefs['theme'];
 $current_page  = isset($_GET['page']) ? $_GET['page'] : 'home';
 ?>
@@ -31,26 +33,64 @@ $current_page  = isset($_GET['page']) ? $_GET['page'] : 'home';
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
+
+      <!-- Left nav links -->
       <ul class="navbar-nav me-auto">
         <li class="nav-item">
-          <a class="nav-link <?php echo ($current_page === 'home'        || !isset($_GET['page'])) ? 'active-link' : ''; ?>" href="index.php">Home</a>
+          <a class="nav-link <?php echo (!isset($_GET['page']) || $current_page === 'home') ? 'active-link' : ''; ?>" href="index.php">Home</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link <?php echo ($current_page === 'catalog')     ? 'active-link' : ''; ?>" href="index.php?page=catalog">Catalog</a>
+          <a class="nav-link <?php echo $current_page === 'catalog'     ? 'active-link' : ''; ?>" href="index.php?page=catalog">Catalog</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link <?php echo ($current_page === 'search')      ? 'active-link' : ''; ?>" href="index.php?page=search">Search</a>
+          <a class="nav-link <?php echo $current_page === 'search'      ? 'active-link' : ''; ?>" href="index.php?page=search">Search</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link <?php echo ($current_page === 'preferences') ? 'active-link' : ''; ?>" href="index.php?page=preferences">Preferences</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link <?php echo ($current_page === 'admin_import') ? 'active-link' : ''; ?>" href="index.php?page=admin_import">Import</a>
+          <a class="nav-link <?php echo $current_page === 'preferences' ? 'active-link' : ''; ?>" href="index.php?page=preferences">Preferences</a>
         </li>
       </ul>
-      <button onclick="toggleTheme()" class="theme-btn" id="themeBtn">
-        <?php echo $current_theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'; ?>
-      </button>
+
+      <!-- Right side buttons -->
+      <div class="d-flex align-items-center gap-2">
+
+        <?php if (is_logged_in()): ?>
+          <!-- Logged in: show username, admin dashboard link, sign out -->
+          <span class="nav-user-badge">
+            👤 <?php echo htmlspecialchars(current_user()['username']); ?>
+          </span>
+          <?php if (is_admin()): ?>
+            <a href="index.php?page=admin_dashboard"
+               class="theme-btn"
+               style="text-decoration:none;">
+              🛡️ Dashboard
+            </a>
+          <?php endif; ?>
+          <a href="index.php?page=logout"
+             class="theme-btn"
+             style="text-decoration:none;">
+            Sign Out
+          </a>
+
+        <?php else: ?>
+          <!-- Not logged in: show Register and Login buttons -->
+          <a href="index.php?page=register"
+             class="theme-btn"
+             style="text-decoration:none;">
+            Register
+          </a>
+          <a href="index.php?page=login"
+             class="theme-btn"
+             style="text-decoration:none; background:var(--ink); color:var(--cream);">
+            Login
+          </a>
+        <?php endif; ?>
+
+        <!-- Dark mode toggle — always visible -->
+        <button onclick="toggleTheme()" class="theme-btn" id="themeBtn">
+          <?php echo $current_theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'; ?>
+        </button>
+
+      </div>
     </div>
   </div>
 </nav>

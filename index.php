@@ -1,17 +1,30 @@
 <?php
+session_start();
+
 require_once 'includes/db.php';
+require_once 'includes/auth.php';
 require_once 'includes/preferences_helper.php';
 
 $page    = isset($_GET['page']) ? $_GET['page'] : 'home';
-$allowed = ['home', 'catalog', 'search', 'preferences', 'upload', 'admin_import'];
 
-// import.php handles its own POST and redirects — run it directly
-if ($page === 'import') {
-    require 'pages/import.php';
+// ── Standalone pages (no header/footer) ──────────────────────
+$standalone = ['logout', 'import', 'datatables_ajax'];
+if (in_array($page, $standalone)) {
+    require "pages/{$page}.php";
     exit;
 }
 
-// Handle theme toggle redirect — save pref then go back to previous page
+// ── Admin-only pages — use admin header/footer ───────────────
+$admin_pages = ['admin_dashboard', 'admin_import', 'upload'];
+if (in_array($page, $admin_pages)) {
+    require_admin();
+    require 'includes/admin_header.php';
+    require "pages/{$page}.php";
+    require 'includes/admin_footer.php';
+    exit;
+}
+
+// ── Handle theme toggle redirect ──────────────────────────────
 if ($page === 'preferences' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['redirect'])) {
     if (isset($_POST['theme'])) {
         save_preference('theme', $_POST['theme'], $db, null);
@@ -20,13 +33,13 @@ if ($page === 'preferences' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_
     exit;
 }
 
+// ── Public pages ─────────────────────────────────────────────
+$allowed = ['home', 'catalog', 'search', 'preferences', 'login', 'register'];
 if (!in_array($page, $allowed)) {
     $page = 'home';
 }
 ?>
 
 <?php include 'includes/header.php'; ?>
-
 <?php include "pages/{$page}.php"; ?>
-
 <?php include 'includes/footer.php'; ?>
