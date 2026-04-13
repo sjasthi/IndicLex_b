@@ -125,7 +125,7 @@ if ($action === 'dictionaries') {
                COUNT(de.id) AS entry_count
         FROM dictionaries d
         LEFT JOIN dictionary_entries de ON de.dictionary_id = d.id
-        GROUP BY d.id
+        GROUP BY d.id, d.name, d.description, d.source_lang, d.target_lang, d.created_at
         ORDER BY d.name ASC
     ");
     if ($r) {

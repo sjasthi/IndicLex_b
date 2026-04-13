@@ -16,7 +16,8 @@ $r = $db->query("
            COUNT(de.id) AS word_count
     FROM dictionaries d
     LEFT JOIN dictionary_entries de ON de.dictionary_id = d.id
-    GROUP BY d.id ORDER BY word_count DESC
+    GROUP BY d.id, d.name, d.source_lang, d.target_lang
+    ORDER BY word_count DESC
 ");
 if ($r) while ($row = $r->fetch_assoc()) $dict_stats[] = $row;
 
@@ -163,6 +164,7 @@ if ($r) while ($row = $r->fetch_assoc()) $recent[] = $row;
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="assets/JS/admin_crud.js"></script>
 <script>
 $(document).ready(function () {
     $('#entriesTable').DataTable({
@@ -195,5 +197,6 @@ $(document).ready(function () {
         }
     });
 
+    refreshAdminStats();
 });
 </script>

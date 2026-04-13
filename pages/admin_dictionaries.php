@@ -12,7 +12,7 @@ $r = $db->query("
            COUNT(de.id) AS word_count
     FROM dictionaries d
     LEFT JOIN dictionary_entries de ON de.dictionary_id = d.id
-    GROUP BY d.id
+    GROUP BY d.id, d.name, d.description, d.source_lang, d.target_lang, d.created_at
     ORDER BY d.name ASC
 ");
 if ($r) {
@@ -203,7 +203,7 @@ if ($r) {
     var action = id ? 'dictionary_update' : 'dictionary_create';
     var data = jQuery.extend({ action: action }, payload);
     if (id) data.id = parseInt(id, 10);
-    jQuery.post(api, data)
+    jQuery.ajax({ url: api, method: 'POST', data: data, dataType: 'json' })
       .done(function (res) {
         if (!res.ok) {
           flash(res.error || 'Save failed.', 'danger');
@@ -222,7 +222,7 @@ if ($r) {
 
   jQuery('#dictDeleteConfirm').on('click', function () {
     if (!delId) return;
-    jQuery.post(api, { action: 'dictionary_delete', id: delId })
+    jQuery.ajax({ url: api, method: 'POST', data: { action: 'dictionary_delete', id: delId }, dataType: 'json' })
       .done(function (res) {
         if (!res.ok) {
           flash(res.error || 'Delete failed.', 'danger');

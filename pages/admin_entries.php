@@ -292,7 +292,7 @@ foreach ($dict_list as $d) {
     var action = id ? 'entry_update' : 'entry_create';
     var data = jQuery.extend({ action: action }, payload);
     if (id) data.id = parseInt(id, 10);
-    jQuery.post(api, data)
+    jQuery.ajax({ url: api, method: 'POST', data: data, dataType: 'json' })
       .done(function (res) {
         if (!res.ok) {
           flash(res.error || 'Save failed.', 'danger');
@@ -313,7 +313,7 @@ foreach ($dict_list as $d) {
 
   jQuery('#entryDeleteConfirm').on('click', function () {
     if (!delEntryId) return;
-    jQuery.post(api, { action: 'entry_delete', id: delEntryId })
+    jQuery.ajax({ url: api, method: 'POST', data: { action: 'entry_delete', id: delEntryId }, dataType: 'json' })
       .done(function (res) {
         if (!res.ok) {
           flash(res.error || 'Delete failed.', 'danger');
