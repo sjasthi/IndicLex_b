@@ -38,6 +38,16 @@ $user         = current_user();
       </a>
     </li>
     <li>
+      <a href="index.php?page=admin_dictionaries" class="admin-nav-link <?php echo $current_page === 'admin_dictionaries' ? 'active' : ''; ?>">
+        📚 Dictionaries
+      </a>
+    </li>
+    <li>
+      <a href="index.php?page=admin_entries" class="admin-nav-link <?php echo $current_page === 'admin_entries' ? 'active' : ''; ?>">
+        📝 Entries
+      </a>
+    </li>
+    <li>
       <a href="index.php?page=admin_import" class="admin-nav-link <?php echo $current_page === 'admin_import' ? 'active' : ''; ?>">
         📥 Import
       </a>

@@ -7,26 +7,7 @@ require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/db.php';
 require_admin();
 
-// ── Stats only — no bulk data fetching ──────────────────────
-$total_words = 0;
-$r = $db->query("SELECT COUNT(*) AS total FROM dictionary_entries");
-if ($r) $total_words = $r->fetch_assoc()['total'];
-
-$total_dicts = 0;
-$r = $db->query("SELECT COUNT(*) AS total FROM dictionaries");
-if ($r) $total_dicts = $r->fetch_assoc()['total'];
-
-$total_users = 0;
-$r = $db->query("SELECT COUNT(*) AS total FROM users");
-if ($r) $total_users = $r->fetch_assoc()['total'];
-
-$with_telugu = 0;
-$r = $db->query("SELECT COUNT(*) AS total FROM dictionary_entries WHERE telugu != '' AND telugu IS NOT NULL");
-if ($r) $with_telugu = $r->fetch_assoc()['total'];
-
-$with_hindi = 0;
-$r = $db->query("SELECT COUNT(*) AS total FROM dictionary_entries WHERE hindi != '' AND hindi IS NOT NULL");
-if ($r) $with_hindi = $r->fetch_assoc()['total'];
+require_once __DIR__ . '/../includes/admin_stats_data.php';
 
 // Per-dictionary word counts
 $dict_stats = [];
@@ -62,43 +43,15 @@ if ($r) while ($row = $r->fetch_assoc()) $recent[] = $row;
         <h1 class="admin-title">Admin Dashboard</h1>
         <p class="admin-subtitle">Welcome back, <strong><?php echo htmlspecialchars(current_user()['username']); ?></strong></p>
       </div>
-      <div class="admin-header-actions">
+      <div class="admin-header-actions d-flex flex-wrap gap-2">
+        <a href="index.php?page=admin_dictionaries" class="btn btn-outline-primary btn-sm">📚 Dictionaries</a>
+        <a href="index.php?page=admin_entries" class="btn btn-outline-primary btn-sm">📝 Entries</a>
         <a href="index.php?page=admin_import" class="btn btn-primary btn-sm">📥 Import</a>
         <a href="index.php?page=logout"       class="btn btn-outline-secondary btn-sm">Sign Out</a>
       </div>
     </div>
 
-    <!-- Stat Cards -->
-    <div class="row g-3 mb-4">
-      <div class="col-6 col-md-3">
-        <div class="admin-stat-card">
-          <div class="admin-stat-icon">📚</div>
-          <div class="admin-stat-num"><?php echo number_format($total_words); ?></div>
-          <div class="admin-stat-label">Total Words</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="admin-stat-card">
-          <div class="admin-stat-icon">📖</div>
-          <div class="admin-stat-num"><?php echo number_format($total_dicts); ?></div>
-          <div class="admin-stat-label">Dictionaries</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="admin-stat-card">
-          <div class="admin-stat-icon">🇮🇳</div>
-          <div class="admin-stat-num"><?php echo number_format($with_telugu); ?></div>
-          <div class="admin-stat-label">Telugu Entries</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="admin-stat-card">
-          <div class="admin-stat-icon">👥</div>
-          <div class="admin-stat-num"><?php echo number_format($total_users); ?></div>
-          <div class="admin-stat-label">Users</div>
-        </div>
-      </div>
-    </div>
+    <?php require __DIR__ . '/../includes/admin_stats_cards.php'; ?>
 
     <div class="row g-4 mb-4">
 
@@ -241,5 +194,6 @@ $(document).ready(function () {
             paginate: { first: '«', last: '»', next: '›', previous: '‹' }
         }
     });
+
 });
 </script>
