@@ -31,19 +31,49 @@ if (!defined('DATABASE_PASSWORD')) {
     define('DATABASE_PASSWORD', $v !== false ? $v : '');
 }
 
-$db = new mysqli(
-    DATABASE_HOST,
-    DATABASE_USER,
-    DATABASE_PASSWORD,
-    DATABASE_DATABASE
-);
+$db_connect_errno = 0;
+$db_connect_error   = '';
 
-if ($db->connect_error) {
-    $msg = 'Connect Error (' . $db->connect_errno . '): ' . $db->connect_error;
-    if ($db->connect_errno === 1045) {
-        $msg .= "\n\nHint: copy includes/db.local.example.php to includes/db.local.php and set DATABASE_PASSWORD (and user/host if needed).";
+try {
+    $db = new mysqli(
+        DATABASE_HOST,
+        DATABASE_USER,
+        DATABASE_PASSWORD,
+        DATABASE_DATABASE
+    );
+} catch (mysqli_sql_exception $e) {
+    $db = null;
+    $db_connect_errno = (int) $e->getCode();
+    $db_connect_error = $e->getMessage();
+    if ($db_connect_errno === 0 && stripos($db_connect_error, 'Access denied') !== false) {
+        $db_connect_errno = 1045;
     }
-    die($msg);
+}
+
+if ($db === null || !($db instanceof mysqli) || $db->connect_errno) {
+    $errno = $db_connect_errno;
+    $err   = $db_connect_error !== '' ? $db_connect_error : ($db && $db->connect_error ? $db->connect_error : 'Unknown connection error');
+    $used_pw = (defined('DATABASE_PASSWORD') && DATABASE_PASSWORD !== '');
+    $local_exists = is_file(__DIR__ . '/db.local.php');
+
+    header('Content-Type: text/html; charset=utf-8');
+    http_response_code(503);
+    echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Database connection</title></head><body style="font-family:system-ui,sans-serif;max-width:42rem;margin:2rem auto;padding:0 1rem;line-height:1.5">';
+    echo '<h1>Database connection failed</h1>';
+    echo '<p><code>' . htmlspecialchars($err, ENT_QUOTES, 'UTF-8') . '</code></p>';
+
+    if ($errno === 1045 || stripos($err, 'Access denied') !== false) {
+        echo '<p><strong>Access denied</strong> usually means the username or password in <code>includes/db.local.php</code> does not match MySQL.</p>';
+        echo '<ul>';
+        echo '<li><code>db.local.php</code> present: <strong>' . ($local_exists ? 'yes' : 'no') . '</strong></li>';
+        echo '<li>Password in use: <strong>' . ($used_pw ? 'yes (non-empty)' : 'no (empty — MySQL reports "using password: NO")') . '</strong></li>';
+        echo '</ul>';
+        echo '<p>Open <code>includes/db.local.php</code> and set <code>DATABASE_PASSWORD</code> to the same password as MySQL user <code>' . htmlspecialchars(DATABASE_USER, ENT_QUOTES, 'UTF-8') . '</code> (check in phpMyAdmin → <em>User accounts</em>, or reset the password there).</p>';
+        echo '<p>If this account should have <em>no</em> password, leave <code>\'\'</code> — but your server is rejecting that, so a password is required.</p>';
+    }
+
+    echo '</body></html>';
+    exit;
 }
 
 // utf8mb4 is required for Hindi (Devanagari) script to save correctly
