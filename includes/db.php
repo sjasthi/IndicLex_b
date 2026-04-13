@@ -72,8 +72,9 @@ try {
 if ($db === null || !($db instanceof mysqli) || $db->connect_errno) {
     $errno = $db_connect_errno;
     $err   = $db_connect_error !== '' ? $db_connect_error : ($db && $db->connect_error ? $db->connect_error : 'Unknown connection error');
-    $used_pw = (defined('DATABASE_PASSWORD') && DATABASE_PASSWORD !== '');
+    $used_pw = ($database_password_effective !== '');
     $local_exists = is_file(__DIR__ . '/db.local.php');
+    $pwfile_exists = is_file(__DIR__ . '/db.password');
 
     header('Content-Type: text/html; charset=utf-8');
     http_response_code(503);
@@ -82,13 +83,19 @@ if ($db === null || !($db instanceof mysqli) || $db->connect_errno) {
     echo '<p><code>' . htmlspecialchars($err, ENT_QUOTES, 'UTF-8') . '</code></p>';
 
     if ($errno === 1045 || stripos($err, 'Access denied') !== false) {
-        echo '<p><strong>Access denied</strong> usually means the username or password in <code>includes/db.local.php</code> does not match MySQL.</p>';
+        echo '<p><strong>Access denied</strong> — MySQL user <code>' . htmlspecialchars(DATABASE_USER, ENT_QUOTES, 'UTF-8') . '</code> needs the correct password.</p>';
         echo '<ul>';
-        echo '<li><code>db.local.php</code> present: <strong>' . ($local_exists ? 'yes' : 'no') . '</strong></li>';
-        echo '<li>Password in use: <strong>' . ($used_pw ? 'yes (non-empty)' : 'no (empty — MySQL reports "using password: NO")') . '</strong></li>';
+        echo '<li><code>includes/db.local.php</code> present: <strong>' . ($local_exists ? 'yes' : 'no') . '</strong></li>';
+        echo '<li><code>includes/db.password</code> present: <strong>' . ($pwfile_exists ? 'yes' : 'no') . '</strong></li>';
+        echo '<li>Non-empty password sent to MySQL: <strong>' . ($used_pw ? 'yes' : 'no — MySQL reports "using password: NO"') . '</strong></li>';
         echo '</ul>';
-        echo '<p>Open <code>includes/db.local.php</code> and set <code>DATABASE_PASSWORD</code> to the same password as MySQL user <code>' . htmlspecialchars(DATABASE_USER, ENT_QUOTES, 'UTF-8') . '</code> (check in phpMyAdmin → <em>User accounts</em>, or reset the password there).</p>';
-        echo '<p>If this account should have <em>no</em> password, leave <code>\'\'</code> — but your server is rejecting that, so a password is required.</p>';
+        echo '<p><strong>Fix (pick one):</strong></p>';
+        echo '<ol>';
+        echo '<li>In <code>includes/db.local.php</code>, set <code>define(\'DATABASE_PASSWORD\', \'your_password\');</code></li>';
+        echo '<li>Or create <code>includes/db.password</code> (copy from <code>db.password.example</code>): one line, your MySQL password only — no quotes, optional <code>#</code> comment lines.</li>';
+        echo '<li>Or set the environment variable <code>INDICLEX_DB_PASSWORD</code> for PHP.</li>';
+        echo '</ol>';
+        echo '<p>Find or reset the password in <strong>phpMyAdmin</strong> → <em>User accounts</em> for <code>root</code> @ <code>localhost</code>.</p>';
     }
 
     echo '</body></html>';

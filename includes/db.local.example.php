@@ -1,9 +1,9 @@
 <?php
 /**
  * Copy this file to db.local.php in the same folder and set your real credentials.
- * db.local.php overrides the defaults in db.php and is the usual fix for
- * "Access denied for user 'root'@'localhost' (using password: NO)" when MySQL
- * requires a password for root.
+ *
+ * Alternatively leave DATABASE_PASSWORD as '' and create db.password (see db.password.example)
+ * with your MySQL password on one line.
  */
 define('DATABASE_HOST', 'localhost');
 define('DATABASE_DATABASE', 'indiclex_db');
