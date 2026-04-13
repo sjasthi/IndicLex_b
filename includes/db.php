@@ -3,10 +3,10 @@
 // includes/db.php — Database connection
 // ============================================================
 //
-// Credentials (first match wins):
-//   1. includes/db.local.php — copy from db.local.example.php (recommended for XAMPP)
-//   2. Environment: INDICLEX_DB_HOST, INDICLEX_DB_DATABASE, INDICLEX_DB_USER, INDICLEX_DB_PASSWORD
-//   3. Defaults below (blank password matches stock XAMPP)
+// Credentials:
+//   1. includes/db.local.php — defines DATABASE_* constants
+//   2. includes/db.password — optional plain-text file (one line, no PHP); used if DATABASE_PASSWORD is empty
+//   3. Environment: INDICLEX_DB_HOST, INDICLEX_DB_DATABASE, INDICLEX_DB_USER, INDICLEX_DB_PASSWORD
 //
 
 $__db_local = __DIR__ . '/db.local.php';
@@ -31,6 +31,25 @@ if (!defined('DATABASE_PASSWORD')) {
     define('DATABASE_PASSWORD', $v !== false ? $v : '');
 }
 
+/** Effective password: constant, else first line of db.password, else env (again). */
+$database_password_effective = DATABASE_PASSWORD;
+if ($database_password_effective === '') {
+    $pwfile = __DIR__ . '/db.password';
+    if (is_readable($pwfile)) {
+        foreach (explode("\n", (string) file_get_contents($pwfile)) as $line) {
+            $line = trim($line);
+            if ($line === '' || (isset($line[0]) && $line[0] === '#')) {
+                continue;
+            }
+            $database_password_effective = $line;
+            break;
+        }
+    }
+}
+if ($database_password_effective === '' && getenv('INDICLEX_DB_PASSWORD') !== false) {
+    $database_password_effective = getenv('INDICLEX_DB_PASSWORD');
+}
+
 $db_connect_errno = 0;
 $db_connect_error   = '';
 
@@ -38,7 +57,7 @@ try {
     $db = new mysqli(
         DATABASE_HOST,
         DATABASE_USER,
-        DATABASE_PASSWORD,
+        $database_password_effective,
         DATABASE_DATABASE
     );
 } catch (mysqli_sql_exception $e) {
