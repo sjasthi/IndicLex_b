@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 24, 2026 at 01:47 AM
+-- Generation Time: Apr 07, 2026 at 04:31 AM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- PHP Version: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -7592,13 +7592,6 @@ CREATE TABLE `preferences` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `preferences`
---
-
-INSERT INTO `preferences` (`id`, `user_id`, `theme`, `font_size`, `ui_language`, `show_wod`, `updated_at`) VALUES
-(1, 1, 'light', 'medium', 'en', 1, '2026-03-24 00:20:39');
-
 -- --------------------------------------------------------
 
 --
@@ -7619,7 +7612,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `email`, `password`, `role`, `created_at`) VALUES
-(1, 'admin', 'admin@indiclex.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', '2026-03-24 00:14:25');
+(4, 'Ilyas', 'ilyo9805@gmail.com', '$2y$10$gxbrs3c6TmmYlTGdR30NDut37RgRTgDEeDvAabtJwLMCZ7LXVPPDW', 'admin', '2026-04-07 02:24:44'),
+(5, 'admin', 'admin@indiclex.com', '$2y$10$kXmg1qbi278o7kfVzqH7KONt.c0Pj5rxwIfE72JS0YNqaYKo2Klr6', 'admin', '2026-04-07 02:29:08');
 
 --
 -- Indexes for dumped tables
@@ -7681,7 +7675,7 @@ ALTER TABLE `preferences`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- Constraints for dumped tables
