@@ -1,0 +1,19 @@
+# ============================================================
+# IndicLex / DictionaryHub — Apache (Bluehost, XAMPP, etc.)
+# Clean URL: GET /api/search -> api/search.php
+# ============================================================
+# Avoid Apache content-negotiation turning /api/search into 404
+<IfModule mod_negotiation.c>
+  Options -MultiViews
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # If the site lives in a subdirectory, uncomment and set RewriteBase
+  # to that URL path (example: site at public_html/dictionaryhub/ → /dictionaryhub/)
+  # RewriteBase /
+
+  # Map REST-style API path to the PHP handler (query string preserved)
+  RewriteRule ^api/search/?$ api/search.php [L,QSA]
+</IfModule>

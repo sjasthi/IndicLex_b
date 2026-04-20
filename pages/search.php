@@ -4,6 +4,7 @@
 // ============================================================
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/preferences_helper.php';
+require_once __DIR__ . '/../includes/dictionary_search.php';
 
 // ── Load preferences ─────────────────────────────────────────
 $prefs = load_all_preferences($db, null);
@@ -42,72 +43,19 @@ $error      = '';
 if ($query !== '') {
     $searched = true;
 
-    // Build LIKE pattern based on mode
-    $pattern = match($mode) {
-        'exact'     => $query,
-        'prefix'    => $query . '%',
-        'suffix'    => '%' . $query,
-        'substring' => '%' . $query . '%',
-        default     => '%' . $query . '%',
-    };
-
-    // ── Build WHERE clause ──
-    // Search across English word, Telugu and Hindi translations
-    if ($dict_id === 'all' || $dict_id === '') {
-        $where      = "(de.word LIKE ? OR de.telugu LIKE ? OR de.hindi LIKE ? OR de.transliteration LIKE ?)";
-        $count_sql  = "SELECT COUNT(*) AS total
-                       FROM dictionary_entries de
-                       WHERE {$where}";
-        $result_sql = "SELECT de.*, d.name AS dictionary_name
-                       FROM dictionary_entries de
-                       JOIN dictionaries d ON de.dictionary_id = d.id
-                       WHERE {$where}
-                       ORDER BY de.word ASC
-                       LIMIT ? OFFSET ?";
-
-        $count_stmt = $db->prepare($count_sql);
-        $count_stmt->bind_param('ssss', $pattern, $pattern, $pattern, $pattern);
-        $count_stmt->execute();
-        $total = $count_stmt->get_result()->fetch_assoc()['total'];
-        $count_stmt->close();
-
-        $limit = $results_per_page;
-        $stmt  = $db->prepare($result_sql);
-        $stmt->bind_param('ssssii', $pattern, $pattern, $pattern, $pattern, $limit, $offset);
-
+    $run = indiclex_dictionary_search($db, $query, $mode, $dict_id, $results_per_page, $offset);
+    if (!empty($run['ok'])) {
+        $total   = (int) $run['total'];
+        $results = $run['rows'];
     } else {
-        $dict_id_int = intval($dict_id);
-        $where       = "(de.word LIKE ? OR de.telugu LIKE ? OR de.hindi LIKE ? OR de.transliteration LIKE ?) AND de.dictionary_id = ?";
-        $count_sql   = "SELECT COUNT(*) AS total
-                        FROM dictionary_entries de
-                        WHERE {$where}";
-        $result_sql  = "SELECT de.*, d.name AS dictionary_name
-                        FROM dictionary_entries de
-                        JOIN dictionaries d ON de.dictionary_id = d.id
-                        WHERE {$where}
-                        ORDER BY de.word ASC
-                        LIMIT ? OFFSET ?";
-
-        $count_stmt = $db->prepare($count_sql);
-        $count_stmt->bind_param('ssssi', $pattern, $pattern, $pattern, $pattern, $dict_id_int);
-        $count_stmt->execute();
-        $total = $count_stmt->get_result()->fetch_assoc()['total'];
-        $count_stmt->close();
-
-        $limit = $results_per_page;
-        $stmt  = $db->prepare($result_sql);
-        $stmt->bind_param('ssssiii', $pattern, $pattern, $pattern, $pattern, $dict_id_int, $limit, $offset);
+        $error = $run['error'] ?? 'Search failed';
     }
 
-    $stmt->execute();
-    $result  = $stmt->get_result();
-    while ($row = $result->fetch_assoc()) {
-        $results[] = $row;
-    }
-    $stmt->close();
-
-    $total_pages = ceil($total / $results_per_page);
+    $total_pages = $results_per_page > 0 ? (int) ceil($total / $results_per_page) : 0;
 }
+
+$script_dir      = dirname($_SERVER['SCRIPT_NAME'] ?? '');
+$api_search_path = ($script_dir === '/' || $script_dir === '\\') ? '/api/search.php' : rtrim($script_dir, '/') . '/api/search.php';
 
 // ── Helper: highlight matched term in result ─────────────────
 function highlight($text, $query) {
@@ -147,22 +95,28 @@ function page_url($p, $q, $mode, $dict_id) {
           <!-- Query input -->
           <div class="col-12 col-md-5">
             <label class="search-form-label">Search Word or Translation</label>
-            <div class="search-wrap" style="max-width:100%;">
+            <div class="search-wrap search-wrap-autocomplete" style="max-width:100%;">
               <input
                 type="text"
                 name="q"
+                id="search-q-input"
                 value="<?php echo htmlspecialchars($query); ?>"
                 placeholder='e.g. पानी or "water"'
                 autocomplete="off"
+                data-api-search="<?php echo htmlspecialchars($api_search_path, ENT_QUOTES, 'UTF-8'); ?>"
+                aria-autocomplete="list"
+                aria-controls="search-autocomplete-list"
+                aria-expanded="false"
               >
               <button type="submit">Search →</button>
+              <div id="search-autocomplete-list" class="search-autocomplete-dropdown" role="listbox" hidden></div>
             </div>
           </div>
 
           <!-- Dictionary select -->
           <div class="col-12 col-md-3">
             <label class="search-form-label">Dictionary</label>
-            <select name="dictionary_id" class="pref-select w-100">
+            <select name="dictionary_id" id="search-dictionary-select" class="pref-select w-100">
               <option value="all" <?php echo $dict_id === 'all' ? 'selected' : ''; ?>>All Dictionaries</option>
               <?php foreach ($dictionaries as $d): ?>
                 <option value="<?php echo $d['id']; ?>" <?php echo $dict_id == $d['id'] ? 'selected' : ''; ?>>
@@ -175,7 +129,7 @@ function page_url($p, $q, $mode, $dict_id) {
           <!-- Search mode -->
           <div class="col-12 col-md-3">
             <label class="search-form-label">Search Mode</label>
-            <select name="mode" class="pref-select w-100">
+            <select name="mode" id="search-mode-select" class="pref-select w-100">
               <option value="substring" <?php echo $mode === 'substring' ? 'selected' : ''; ?>>Substring — contains</option>
               <option value="exact"     <?php echo $mode === 'exact'     ? 'selected' : ''; ?>>Exact — full match</option>
               <option value="prefix"    <?php echo $mode === 'prefix'    ? 'selected' : ''; ?>>Prefix — starts with</option>
@@ -204,13 +158,27 @@ function page_url($p, $q, $mode, $dict_id) {
           &nbsp;·&nbsp; Showing <strong><?php echo $results_per_page; ?></strong> results per page
           — <a href="index.php?page=preferences" style="color:var(--gold);">change in Preferences</a>
         </div>
+
+        <div class="word-length-match-callout">
+          <strong>Word length matching</strong>
+          <span class="word-length-match-text">
+            Need words of the same length for a Telugu puzzle or crossword?
+            Use the same-length word tools at
+            <a href="https://telugupuzzles.com/apps.php" target="_blank" rel="noopener noreferrer">Telugu Puzzles</a>
+            (external).
+          </span>
+        </div>
       </form>
     </div>
 
     <!-- ── RESULTS ── -->
     <?php if ($searched): ?>
 
-      <?php if (count($results) === 0): ?>
+      <?php if ($error !== ''): ?>
+        <div class="alert alert-danger search-error-banner" role="alert">
+          <?php echo htmlspecialchars($error); ?>
+        </div>
+      <?php elseif (count($results) === 0): ?>
         <!-- No results -->
         <div class="no-results">
           <div class="no-results-icon">🔍</div>
@@ -362,3 +330,6 @@ function page_url($p, $q, $mode, $dict_id) {
 
   </div>
 </section>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="assets/JS/search-autocomplete.js"></script>
