@@ -16,7 +16,7 @@ $user         = current_user();
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Admin — DictionaryHub</title>
+  <title>Admin — IndicLex</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
@@ -28,7 +28,7 @@ $user         = current_user();
 <nav class="admin-navbar">
   <div class="admin-navbar-brand">
     <span class="admin-badge">🛡️ ADMIN</span>
-    <a href="index.php?page=admin_dashboard" class="admin-site-name">DictionaryHub</a>
+    <a href="index.php?page=admin_dashboard" class="admin-site-name">IndicLex</a>
   </div>
 
   <ul class="admin-nav-links">
