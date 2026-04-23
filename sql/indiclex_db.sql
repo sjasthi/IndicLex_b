@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 07, 2026 at 04:31 AM
+-- Generation Time: Apr 24, 2026 at 01:40 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -42,7 +42,8 @@ CREATE TABLE `dictionaries` (
 --
 
 INSERT INTO `dictionaries` (`id`, `name`, `description`, `source_lang`, `target_lang`, `created_by`, `created_at`) VALUES
-(1, 'Telugu–English', 'Core Telugu to English word list', 'Telugu', 'English', NULL, '2026-03-24 00:14:25');
+(1, 'Telugu–English–Hindi', 'Core Telugu to English word list', 'Telugu', 'English', NULL, '2026-03-24 00:14:25'),
+(2, 'English - Hindi', '', 'English', 'Hindi', 5, '2026-04-13 23:46:41');
 
 -- --------------------------------------------------------
 
@@ -7657,13 +7658,13 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `dictionaries`
 --
 ALTER TABLE `dictionaries`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `dictionary_entries`
 --
 ALTER TABLE `dictionary_entries`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7496;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7498;
 
 --
 -- AUTO_INCREMENT for table `preferences`

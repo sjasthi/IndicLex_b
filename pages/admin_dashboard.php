@@ -46,9 +46,12 @@ if ($r) while ($row = $r->fetch_assoc()) $recent[] = $row;
       </div>
       <div class="admin-header-actions d-flex flex-wrap gap-2">
         <a href="index.php?page=admin_dictionaries" class="btn btn-outline-primary btn-sm">📚 Dictionaries</a>
-        <a href="index.php?page=admin_entries" class="btn btn-outline-primary btn-sm">📝 Entries</a>
-        <a href="index.php?page=admin_import" class="btn btn-primary btn-sm">📥 Import</a>
-        <a href="index.php?page=logout"       class="btn btn-outline-secondary btn-sm">Sign Out</a>
+        <a href="index.php?page=admin_entries"      class="btn btn-outline-primary btn-sm">📝 Entries</a>
+        <a href="index.php?page=admin_compare"      class="btn btn-outline-primary btn-sm">⇄ Compare</a>
+        <a href="index.php?page=admin_integrity"    class="btn btn-outline-warning btn-sm">🔍 Integrity</a>
+        <a href="index.php?page=admin_reports"      class="btn btn-outline-success btn-sm">📈 Reports</a>
+        <a href="index.php?page=admin_import"       class="btn btn-primary btn-sm">📥 Import</a>
+        <a href="index.php?page=logout"             class="btn btn-outline-secondary btn-sm">Sign Out</a>
       </div>
     </div>
 
@@ -129,7 +132,7 @@ if ($r) while ($row = $r->fetch_assoc()) $recent[] = $row;
       </div>
     </div>
 
-    <!-- DataTable — server-side, loads only what's visible -->
+    <!-- DataTable — server-side -->
     <div class="admin-card">
       <div class="admin-card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">📋 All Dictionary Entries</h5>
@@ -143,15 +146,10 @@ if ($r) while ($row = $r->fetch_assoc()) $recent[] = $row;
         <table id="entriesTable" class="table table-hover table-sm" style="width:100%">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>English</th>
-              <th>Telugu</th>
-              <th>Hindi</th>
-              <th>Part of Speech</th>
-              <th>Dictionary</th>
+              <th>ID</th><th>English</th><th>Telugu</th>
+              <th>Hindi</th><th>Part of Speech</th><th>Dictionary</th>
             </tr>
           </thead>
-          <!-- tbody is empty — DataTables fetches via Ajax -->
           <tbody></tbody>
         </table>
       </div>
@@ -168,25 +166,20 @@ if ($r) while ($row = $r->fetch_assoc()) $recent[] = $row;
 <script>
 $(document).ready(function () {
     $('#entriesTable').DataTable({
-        // ── Server-side processing ──────────────────────────
-        // Only fetches the rows currently visible — much faster
         processing:  true,
         serverSide:  true,
         ajax:        'index.php?page=datatables_ajax',
-
         columns: [
-            { data: 'id',              width: '50px' },
-            { data: 'word'             },
-            { data: 'telugu'           },
-            { data: 'hindi'            },
-            { data: 'part_of_speech'   },
-            { data: 'dictionary_name'  },
+            { data: 'id',             width: '50px' },
+            { data: 'word'            },
+            { data: 'telugu'          },
+            { data: 'hindi'           },
+            { data: 'part_of_speech'  },
+            { data: 'dictionary_name' },
         ],
-
         pageLength: 25,
         lengthMenu: [10, 25, 50, 100],
         order: [[0, 'desc']],
-
         language: {
             processing:   '<div class="spinner-border spinner-border-sm text-secondary" role="status"></div> Loading...',
             search:        'Filter:',
