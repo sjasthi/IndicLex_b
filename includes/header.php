@@ -19,7 +19,7 @@ $current_page  = isset($_GET['page']) ? $_GET['page'] : 'home';
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>IndicLex</title>
+  <title>DictionaryHub</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
@@ -28,7 +28,7 @@ $current_page  = isset($_GET['page']) ? $_GET['page'] : 'home';
 
 <nav class="navbar navbar-expand-lg">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="index.php">📖 IndicLex</a>
+    <a class="navbar-brand fw-bold" href="index.php">📖 DictionaryHub</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -47,6 +47,9 @@ $current_page  = isset($_GET['page']) ? $_GET['page'] : 'home';
         </li>
         <li class="nav-item">
           <a class="nav-link <?php echo $current_page === 'preferences' ? 'active-link' : ''; ?>" href="index.php?page=preferences">Preferences</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <?php echo $current_page === 'help' ? 'active-link' : ''; ?>" href="index.php?page=help">Help</a>
         </li>
       </ul>
 

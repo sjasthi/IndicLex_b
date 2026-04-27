@@ -176,9 +176,20 @@ function handleImport($file, $db) {
 // ============================================================
 function handleExport($format, $db) {
     $result = $db->query("
-        SELECT telugu, english, transliteration, part_of_speech, example_telugu, example_english
-        FROM dictionary ORDER BY telugu ASC
+        SELECT de.word, de.telugu, de.hindi,
+               de.transliteration, de.part_of_speech,
+               de.example_source, de.example_target,
+               d.name AS dictionary_name
+        FROM dictionary_entries de
+        JOIN dictionaries d ON de.dictionary_id = d.id
+        ORDER BY de.word ASC
     ");
+
+    if (!$result) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Export query failed: ' . $db->error]);
+        exit;
+    }
 
     $rows      = $result->fetch_all(MYSQLI_ASSOC);
     $timestamp = date('Y-m-d');
@@ -190,7 +201,7 @@ function handleExport($format, $db) {
             header("Content-Disposition: attachment; filename=\"dictionary_{$timestamp}.csv\"");
             echo "\xEF\xBB\xBF"; // BOM for Excel UTF-8
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['telugu','english','transliteration','part_of_speech','example_telugu','example_english']);
+            fputcsv($out, ['word','telugu','hindi','transliteration','part_of_speech','example_source','example_target','dictionary']);
             foreach ($rows as $row) fputcsv($out, $row);
             fclose($out);
             break;
@@ -228,24 +239,26 @@ function buildHtmlExport($rows, $timestamp) {
       table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
       th { text-align: left; padding: 0.6rem 0.8rem; background: #1a1a2e; color: #fff; }
       td { padding: 0.6rem 0.8rem; border-bottom: 1px solid #eee; vertical-align: top; }
-      .telugu { font-size: 1.1rem; font-weight: bold; }
+      .word { font-size: 1.1rem; font-weight: bold; }
       tr:nth-child(even) td { background: #faf8f4; }
     </style></head><body>
-    <h1>📖 DictionaryHub — Telugu–English Dictionary</h1>
+    <h1>📖 DictionaryHub — English–Telugu–Hindi Dictionary</h1>
     <p class='meta'>Exported on {$timestamp} · {$count} entries</p>
     <table><thead><tr>
-      <th>Telugu</th><th>Transliteration</th><th>English</th>
-      <th>Part of Speech</th><th>Example (Telugu)</th><th>Example (English)</th>
+      <th>English</th><th>Telugu</th><th>Hindi</th>
+      <th>Transliteration</th><th>Part of Speech</th>
+      <th>Example (Source)</th><th>Example (Target)</th>
     </tr></thead><tbody>";
 
     foreach ($rows as $r) {
         $html .= "<tr>
-            <td class='telugu'>" . htmlspecialchars($r['telugu'])           . "</td>
-            <td><em>"           . htmlspecialchars($r['transliteration']) . "</em></td>
-            <td>"               . htmlspecialchars($r['english'])         . "</td>
-            <td>"               . htmlspecialchars($r['part_of_speech'])  . "</td>
-            <td>"               . htmlspecialchars($r['example_telugu'])   . "</td>
-            <td>"               . htmlspecialchars($r['example_english']) . "</td>
+            <td class='word'>" . htmlspecialchars($r['word']            ?? '') . "</td>
+            <td>"              . htmlspecialchars($r['telugu']          ?? '') . "</td>
+            <td>"              . htmlspecialchars($r['hindi']           ?? '') . "</td>
+            <td><em>"          . htmlspecialchars($r['transliteration'] ?? '') . "</em></td>
+            <td>"              . htmlspecialchars($r['part_of_speech']  ?? '') . "</td>
+            <td>"              . htmlspecialchars($r['example_source']  ?? '') . "</td>
+            <td>"              . htmlspecialchars($r['example_target']  ?? '') . "</td>
         </tr>";
     }
 

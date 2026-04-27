@@ -23,6 +23,7 @@ $admin_pages = [
     'admin_compare',       // ← added
     'admin_integrity',     // ← added
     'admin_reports',       // ← added
+    'admin_docs'
 ];
 if (in_array($page, $admin_pages)) {
     require_admin();
@@ -42,7 +43,7 @@ if ($page === 'preferences' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_
 }
 
 // ── Public pages ─────────────────────────────────────────────
-$allowed = ['home', 'catalog', 'search', 'preferences', 'login', 'register'];
+$allowed = ['home', 'catalog', 'search', 'preferences', 'login', 'register', 'help'];
 if (!in_array($page, $allowed)) {
     $page = 'home';
 }

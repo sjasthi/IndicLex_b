@@ -51,6 +51,7 @@ if ($r) while ($row = $r->fetch_assoc()) $recent[] = $row;
         <a href="index.php?page=admin_integrity"    class="btn btn-outline-warning btn-sm">🔍 Integrity</a>
         <a href="index.php?page=admin_reports"      class="btn btn-outline-success btn-sm">📈 Reports</a>
         <a href="index.php?page=admin_import"       class="btn btn-primary btn-sm">📥 Import</a>
+        <a href="index.php?page=admin_docs"         class="btn btn-outline-info btn-sm">📄 Docs</a>
         <a href="index.php?page=logout"             class="btn btn-outline-secondary btn-sm">Sign Out</a>
       </div>
     </div>
