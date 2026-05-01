@@ -18,8 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    if ($username === '' || $password === '') {
-        $error = 'Please enter both username and password.';
+    if ($username === '') {
+        $error = 'Please enter username.';
     } else {
         $result = login_user($username, $password, $db);
         if ($result['success']) {
@@ -80,7 +80,6 @@ if (isset($_GET['error'])) {
                 class="login-input"
                 placeholder="Enter password"
                 autocomplete="current-password"
-                required
               >
             </div>
             <button type="submit" class="login-btn">Sign In →</button>

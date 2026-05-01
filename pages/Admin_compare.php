@@ -19,7 +19,13 @@ $dict_b = isset($_GET['dict_b']) ? intval($_GET['dict_b']) : 0;
 $shared  = [];
 $only_a  = [];
 $only_b  = [];
+$total_shared = 0;
+$total_only_a = 0;
+$total_only_b = 0;
 $compared = false;
+
+$cols = $db->query("SHOW COLUMNS FROM dictionary_entries LIKE 'word_norm'");
+$compare_uses_word_norm = ($cols && $cols->num_rows > 0);
 
 if ($dict_a > 0 && $dict_b > 0 && $dict_a !== $dict_b) {
     $compared = true;
@@ -31,52 +37,170 @@ if ($dict_a > 0 && $dict_b > 0 && $dict_a !== $dict_b) {
         if ($d['id'] == $dict_b) $name_b = $d['name'];
     }
 
-    // ── Shared entries (same word in both) ───────────────────
-    $stmt = $db->prepare("
-        SELECT a.word, a.telugu AS telugu_a, a.hindi AS hindi_a,
-               b.telugu AS telugu_b, b.hindi AS hindi_b
-        FROM dictionary_entries a
-        JOIN dictionary_entries b ON LOWER(a.word) = LOWER(b.word)
-        WHERE a.dictionary_id = ? AND b.dictionary_id = ?
-        ORDER BY a.word ASC
-        LIMIT 200
-    ");
-    $stmt->bind_param('ii', $dict_a, $dict_b);
-    $stmt->execute();
-    $shared = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $stmt->close();
+    if ($compare_uses_word_norm) {
+        // ── Shared (indexed join on word_norm + accurate totals) ──
+        $stmt = $db->prepare("
+            SELECT COUNT(*) AS n
+            FROM dictionary_entries a
+            INNER JOIN dictionary_entries b
+              ON a.word_norm = b.word_norm AND b.dictionary_id = ?
+            WHERE a.dictionary_id = ?
+        ");
+        $stmt->bind_param('ii', $dict_b, $dict_a);
+        $stmt->execute();
+        $total_shared = (int) ($stmt->get_result()->fetch_assoc()['n'] ?? 0);
+        $stmt->close();
 
-    // ── Only in A ────────────────────────────────────────────
-    $stmt = $db->prepare("
-        SELECT a.word, a.telugu, a.hindi
-        FROM dictionary_entries a
-        WHERE a.dictionary_id = ?
-          AND LOWER(a.word) NOT IN (
-              SELECT LOWER(word) FROM dictionary_entries WHERE dictionary_id = ?
-          )
-        ORDER BY a.word ASC
-        LIMIT 200
-    ");
-    $stmt->bind_param('ii', $dict_a, $dict_b);
-    $stmt->execute();
-    $only_a = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $stmt->close();
+        $stmt = $db->prepare("
+            SELECT a.word, a.telugu AS telugu_a, a.hindi AS hindi_a,
+                   b.telugu AS telugu_b, b.hindi AS hindi_b
+            FROM dictionary_entries a
+            INNER JOIN dictionary_entries b
+              ON a.word_norm = b.word_norm AND b.dictionary_id = ?
+            WHERE a.dictionary_id = ?
+            ORDER BY a.word ASC
+            LIMIT 200
+        ");
+        $stmt->bind_param('ii', $dict_b, $dict_a);
+        $stmt->execute();
+        $shared = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
 
-    // ── Only in B ────────────────────────────────────────────
-    $stmt = $db->prepare("
-        SELECT b.word, b.telugu, b.hindi
-        FROM dictionary_entries b
-        WHERE b.dictionary_id = ?
-          AND LOWER(b.word) NOT IN (
-              SELECT LOWER(word) FROM dictionary_entries WHERE dictionary_id = ?
-          )
-        ORDER BY b.word ASC
-        LIMIT 200
-    ");
-    $stmt->bind_param('ii', $dict_b, $dict_a);
-    $stmt->execute();
-    $only_b = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $stmt->close();
+        // ── Only in A (LEFT JOIN anti-pattern; avoids correlated NOT IN) ──
+        $stmt = $db->prepare("
+            SELECT COUNT(*) AS n
+            FROM dictionary_entries a
+            LEFT JOIN dictionary_entries b
+              ON a.word_norm = b.word_norm AND b.dictionary_id = ?
+            WHERE a.dictionary_id = ? AND b.id IS NULL
+        ");
+        $stmt->bind_param('ii', $dict_b, $dict_a);
+        $stmt->execute();
+        $total_only_a = (int) ($stmt->get_result()->fetch_assoc()['n'] ?? 0);
+        $stmt->close();
+
+        $stmt = $db->prepare("
+            SELECT a.word, a.telugu, a.hindi
+            FROM dictionary_entries a
+            LEFT JOIN dictionary_entries b
+              ON a.word_norm = b.word_norm AND b.dictionary_id = ?
+            WHERE a.dictionary_id = ? AND b.id IS NULL
+            ORDER BY a.word ASC
+            LIMIT 200
+        ");
+        $stmt->bind_param('ii', $dict_b, $dict_a);
+        $stmt->execute();
+        $only_a = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+
+        // ── Only in B ──
+        $stmt = $db->prepare("
+            SELECT COUNT(*) AS n
+            FROM dictionary_entries b
+            LEFT JOIN dictionary_entries a
+              ON b.word_norm = a.word_norm AND a.dictionary_id = ?
+            WHERE b.dictionary_id = ? AND a.id IS NULL
+        ");
+        $stmt->bind_param('ii', $dict_a, $dict_b);
+        $stmt->execute();
+        $total_only_b = (int) ($stmt->get_result()->fetch_assoc()['n'] ?? 0);
+        $stmt->close();
+
+        $stmt = $db->prepare("
+            SELECT b.word, b.telugu, b.hindi
+            FROM dictionary_entries b
+            LEFT JOIN dictionary_entries a
+              ON b.word_norm = a.word_norm AND a.dictionary_id = ?
+            WHERE b.dictionary_id = ? AND a.id IS NULL
+            ORDER BY b.word ASC
+            LIMIT 200
+        ");
+        $stmt->bind_param('ii', $dict_a, $dict_b);
+        $stmt->execute();
+        $only_b = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+    } else {
+        // Fallback before migration (`sql/migrations/add_word_norm_and_hmong_dict.sql`): slower LOWER()/NOT IN path
+        $stmt = $db->prepare("
+            SELECT COUNT(*) AS n FROM dictionary_entries a
+            INNER JOIN dictionary_entries b ON LOWER(a.word) = LOWER(b.word)
+            WHERE a.dictionary_id = ? AND b.dictionary_id = ?
+        ");
+        $stmt->bind_param('ii', $dict_a, $dict_b);
+        $stmt->execute();
+        $total_shared = (int) ($stmt->get_result()->fetch_assoc()['n'] ?? 0);
+        $stmt->close();
+
+        $stmt = $db->prepare("
+            SELECT a.word, a.telugu AS telugu_a, a.hindi AS hindi_a,
+                   b.telugu AS telugu_b, b.hindi AS hindi_b
+            FROM dictionary_entries a
+            JOIN dictionary_entries b ON LOWER(a.word) = LOWER(b.word)
+            WHERE a.dictionary_id = ? AND b.dictionary_id = ?
+            ORDER BY a.word ASC
+            LIMIT 200
+        ");
+        $stmt->bind_param('ii', $dict_a, $dict_b);
+        $stmt->execute();
+        $shared = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+
+        $stmt = $db->prepare("
+            SELECT COUNT(*) AS n
+            FROM dictionary_entries a
+            WHERE a.dictionary_id = ?
+              AND LOWER(a.word) NOT IN (
+                  SELECT LOWER(word) FROM dictionary_entries WHERE dictionary_id = ?
+              )
+        ");
+        $stmt->bind_param('ii', $dict_a, $dict_b);
+        $stmt->execute();
+        $total_only_a = (int) ($stmt->get_result()->fetch_assoc()['n'] ?? 0);
+        $stmt->close();
+
+        $stmt = $db->prepare("
+            SELECT a.word, a.telugu, a.hindi
+            FROM dictionary_entries a
+            WHERE a.dictionary_id = ?
+              AND LOWER(a.word) NOT IN (
+                  SELECT LOWER(word) FROM dictionary_entries WHERE dictionary_id = ?
+              )
+            ORDER BY a.word ASC
+            LIMIT 200
+        ");
+        $stmt->bind_param('ii', $dict_a, $dict_b);
+        $stmt->execute();
+        $only_a = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+
+        $stmt = $db->prepare("
+            SELECT COUNT(*) AS n
+            FROM dictionary_entries b
+            WHERE b.dictionary_id = ?
+              AND LOWER(b.word) NOT IN (
+                  SELECT LOWER(word) FROM dictionary_entries WHERE dictionary_id = ?
+              )
+        ");
+        $stmt->bind_param('ii', $dict_b, $dict_a);
+        $stmt->execute();
+        $total_only_b = (int) ($stmt->get_result()->fetch_assoc()['n'] ?? 0);
+        $stmt->close();
+
+        $stmt = $db->prepare("
+            SELECT b.word, b.telugu, b.hindi
+            FROM dictionary_entries b
+            WHERE b.dictionary_id = ?
+              AND LOWER(b.word) NOT IN (
+                  SELECT LOWER(word) FROM dictionary_entries WHERE dictionary_id = ?
+              )
+            ORDER BY b.word ASC
+            LIMIT 200
+        ");
+        $stmt->bind_param('ii', $dict_b, $dict_a);
+        $stmt->execute();
+        $only_b = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+    }
 }
 ?>
 
@@ -133,18 +257,22 @@ if ($dict_a > 0 && $dict_b > 0 && $dict_a !== $dict_b) {
       <!-- ── SUMMARY PILLS ── -->
       <div class="compare-summary-row">
         <div class="compare-pill compare-pill-shared">
-          <div class="compare-pill-num"><?php echo number_format(count($shared)); ?></div>
+          <div class="compare-pill-num"><?php echo number_format($total_shared); ?></div>
           <div class="compare-pill-label">Shared Entries</div>
         </div>
         <div class="compare-pill compare-pill-a">
-          <div class="compare-pill-num"><?php echo number_format(count($only_a)); ?></div>
+          <div class="compare-pill-num"><?php echo number_format($total_only_a); ?></div>
           <div class="compare-pill-label">Only in <?php echo htmlspecialchars($name_a); ?></div>
         </div>
         <div class="compare-pill compare-pill-b">
-          <div class="compare-pill-num"><?php echo number_format(count($only_b)); ?></div>
+          <div class="compare-pill-num"><?php echo number_format($total_only_b); ?></div>
           <div class="compare-pill-label">Only in <?php echo htmlspecialchars($name_b); ?></div>
         </div>
       </div>
+
+      <?php if ($total_shared > 200 || $total_only_a > 200 || $total_only_b > 200): ?>
+        <p class="text-muted small mb-4">Lists are capped at 200 rows per section; the summary numbers above are full totals.</p>
+      <?php endif; ?>
 
       <!-- ── SHARED ENTRIES ── -->
       <?php if (count($shared) > 0): ?>
@@ -160,10 +288,10 @@ if ($dict_a > 0 && $dict_b > 0 && $dict_a !== $dict_b) {
               <thead>
                 <tr>
                   <th>Word</th>
-                  <th><?php echo htmlspecialchars($name_a); ?> — Telugu</th>
-                  <th><?php echo htmlspecialchars($name_a); ?> — Hindi</th>
-                  <th><?php echo htmlspecialchars($name_b); ?> — Telugu</th>
-                  <th><?php echo htmlspecialchars($name_b); ?> — Hindi</th>
+                  <th><?php echo htmlspecialchars($name_a); ?> — Gloss 1</th>
+                  <th><?php echo htmlspecialchars($name_a); ?> — Gloss 2</th>
+                  <th><?php echo htmlspecialchars($name_b); ?> — Gloss 1</th>
+                  <th><?php echo htmlspecialchars($name_b); ?> — Gloss 2</th>
                   <th>Match?</th>
                 </tr>
               </thead>
@@ -210,7 +338,7 @@ if ($dict_a > 0 && $dict_b > 0 && $dict_a !== $dict_b) {
                 <p class="text-muted p-3 mb-0">No unique entries.</p>
               <?php else: ?>
                 <table class="table table-sm table-hover mb-0">
-                  <thead><tr><th>Word</th><th>Telugu</th><th>Hindi</th></tr></thead>
+                  <thead><tr><th>Word</th><th>Gloss 1</th><th>Gloss 2</th></tr></thead>
                   <tbody>
                     <?php foreach ($only_a as $row): ?>
                       <tr>
@@ -237,7 +365,7 @@ if ($dict_a > 0 && $dict_b > 0 && $dict_a !== $dict_b) {
                 <p class="text-muted p-3 mb-0">No unique entries.</p>
               <?php else: ?>
                 <table class="table table-sm table-hover mb-0">
-                  <thead><tr><th>Word</th><th>Telugu</th><th>Hindi</th></tr></thead>
+                  <thead><tr><th>Word</th><th>Gloss 1</th><th>Gloss 2</th></tr></thead>
                   <tbody>
                     <?php foreach ($only_b as $row): ?>
                       <tr>

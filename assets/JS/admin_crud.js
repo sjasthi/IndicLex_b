@@ -1,27 +1,91 @@
-/**
- * Updates stat card numbers from admin_crud_api (matches dashboard queries).
- */
-function refreshAdminStats() {
-    if (typeof jQuery === 'undefined') {
-        return;
+/* ============================================================
+   assets/JS/admin_crud.js
+   Shared admin JavaScript utilities.
+   Required by: admin_dashboard.php, admin_dictionaries.php,
+                admin_entries.php
+   ============================================================ */
+
+// ── API base URL ──────────────────────────────────────────────
+var ADMIN_API = 'index.php?page=admin_crud_api';
+
+// ── Show alert banner ─────────────────────────────────────────
+function showAdminAlert(type, message) {
+    var $alert = jQuery('#admin-crud-alert');
+    if ($alert.length === 0) return;
+
+    // Map type to Bootstrap class
+    var cls = {
+        'success' : 'alert-success',
+        'danger'  : 'alert-danger',
+        'warning' : 'alert-warning',
+        'info'    : 'alert-info',
+    }[type] || 'alert-info';
+
+    $alert
+        .removeClass('d-none alert-success alert-danger alert-warning alert-info')
+        .addClass(cls)
+        .html(message);
+
+    // Auto-hide success messages after 4 seconds
+    if (type === 'success') {
+        setTimeout(function () {
+            $alert.addClass('d-none');
+        }, 4000);
     }
-    jQuery.getJSON('index.php?page=admin_crud_api', { action: 'stats' })
-        .done(function (data) {
-            if (!data || !data.ok) {
-                return;
-            }
-            jQuery('#stat-total-words').text(Number(data.total_words).toLocaleString());
-            jQuery('#stat-total-dicts').text(Number(data.total_dicts).toLocaleString());
-            jQuery('#stat-with-telugu').text(Number(data.with_telugu).toLocaleString());
-            jQuery('#stat-total-users').text(Number(data.total_users).toLocaleString());
+}
+
+// ── Refresh stat cards on the dashboard ──────────────────────
+function refreshAdminStats() {
+    jQuery.getJSON(ADMIN_API, { action: 'stats' })
+        .done(function (res) {
+            if (!res || !res.ok) return;
+
+            // Update each stat card number if it exists on the page
+            var map = {
+                '.stat-total-words'   : res.total_words,
+                '.stat-total-dicts'   : res.total_dicts,
+                '.stat-total-users'   : res.total_users,
+                '.stat-with-telugu'   : res.with_telugu,
+                '.stat-with-hindi'    : res.with_hindi,
+            };
+
+            jQuery.each(map, function (selector, value) {
+                jQuery(selector).text(
+                    typeof value === 'number'
+                        ? value.toLocaleString()
+                        : value
+                );
+            });
+        })
+        .fail(function () {
+            // Silently fail — stats refresh is non-critical
         });
 }
 
-function showAdminAlert(type, message) {
-    var cls = type === 'success' ? 'alert-success' : type === 'danger' ? 'alert-danger' : 'alert-info';
-    var $box = jQuery('#admin-crud-alert');
-    if (!$box.length) {
-        return;
-    }
-    $box.removeClass('d-none alert-success alert-danger alert-info').addClass(cls).text(message);
+// ── Generic POST helper ───────────────────────────────────────
+function adminPost(data, onSuccess, onError) {
+    jQuery.ajax({
+        url      : ADMIN_API,
+        method   : 'POST',
+        data     : data,
+        dataType : 'json',
+    })
+    .done(function (res) {
+        if (!res.ok) {
+            if (typeof onError === 'function') {
+                onError(res.error || 'Request failed.');
+            }
+            return;
+        }
+        if (typeof onSuccess === 'function') {
+            onSuccess(res);
+        }
+    })
+    .fail(function (xhr) {
+        var r   = xhr.responseJSON;
+        var msg = (r && r.error) ? r.error : 'Request failed (HTTP ' + xhr.status + ').';
+        if (typeof onError === 'function') {
+            onError(msg);
+        }
+    });
 }

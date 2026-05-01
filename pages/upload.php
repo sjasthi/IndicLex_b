@@ -74,9 +74,19 @@ function handleImport($file, $db) {
 
     // ── Parse file with PhpSpreadsheet ──
     try {
-        $spreadsheet = IOFactory::load($tmpPath);
-        $sheet       = $spreadsheet->getActiveSheet();
-        $rows        = $sheet->toArray(null, true, true, false);
+        if ($ext === 'csv') {
+            $reader = new \PhpOffice\PhpSpreadsheet\Reader\Csv();
+            $reader->setInputEncoding('UTF-8');
+            $reader->setDelimiter(',');
+            $spreadsheet = $reader->load($tmpPath);
+        } else {
+            $reader = IOFactory::createReaderForFile($tmpPath);
+            $reader->setReadDataOnly(true);
+            $spreadsheet = $reader->load($tmpPath);
+        }
+
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows  = $sheet->toArray(null, true, true, false);
     } catch (\Exception $e) {
         @unlink($tmpPath);
         $errors[] = 'Could not read file: ' . $e->getMessage();
@@ -103,10 +113,13 @@ function handleImport($file, $db) {
     $colIndex = array_flip($header);
 
     // ── Prepare statements ──
-    $checkStmt = $db->prepare("SELECT id FROM dictionary WHERE telugu = ? AND english = ?");
+    $checkStmt = $db->prepare("
+        SELECT id FROM dictionary_entries
+        WHERE dictionary_id = 1 AND word = ?
+    ");
     $insertStmt = $db->prepare("
-        INSERT INTO dictionary (telugu, english, transliteration, part_of_speech, example_telugu, example_english)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO dictionary_entries (dictionary_id, word, telugu, hindi, transliteration, part_of_speech, example_source, example_target)
+        VALUES (1, ?, ?, ?, ?, ?, ?, ?)
     ");
 
     // ── Process each row ──
@@ -114,50 +127,47 @@ function handleImport($file, $db) {
         $row    = $rows[$i];
         $rowNum = $i + 1;
 
-        $telugu  = trim((string)($row[$colIndex['telugu']]   ?? ''));
-        $english = trim((string)($row[$colIndex['english']] ?? ''));
+        $english = trim((string)($row[$colIndex['word']    ?? $colIndex['english'] ?? 0] ?? ''));
+        $telugu  = trim((string)($row[$colIndex['telugu']  ?? 1] ?? ''));
+        $hindi   = trim((string)($row[$colIndex['hindi']   ?? 2] ?? ''));
 
         // Skip silently blank rows
-        if ($telugu === '' && $english === '') continue;
+        if ($english === '' && $telugu === '') continue;
 
-        if ($telugu === '') {
-            $errors[] = "Row {$rowNum}: missing Telugu word — skipped.";
-            continue;
-        }
         if ($english === '') {
-            $errors[] = "Row {$rowNum}: missing English translation for \"{$hindi}\" — skipped.";
+            $errors[] = "Row {$rowNum}: missing English word — skipped.";
             continue;
         }
 
         // Duplicate detection
-        $checkStmt->bind_param('ss', $telugu, $english);
+        $checkStmt->bind_param('s', $english);
         $checkStmt->execute();
         $checkStmt->store_result();
         if ($checkStmt->num_rows > 0) {
-            $duplicates[] = "Row {$rowNum}: \"{$hindi}\" / \"{$english}\" already exists — skipped.";
+            $duplicates[] = "Row {$rowNum}: \"{$english}\" already exists — skipped.";
             continue;
         }
 
         // Optional fields
         $transliteration = trim((string)($row[$colIndex['transliteration'] ?? -1] ?? ''));
         $part_of_speech  = trim((string)($row[$colIndex['part_of_speech']  ?? -1] ?? ''));
-        $example_telugu  = trim((string)($row[$colIndex['example_telugu']   ?? -1] ?? ''));
-        $example_english = trim((string)($row[$colIndex['example_english'] ?? -1] ?? ''));
+        $example_source  = trim((string)($row[$colIndex['example_source']  ?? -1] ?? ''));
+        $example_target  = trim((string)($row[$colIndex['example_target']  ?? -1] ?? ''));
 
         // Warn on unusually long values
-        if (mb_strlen($telugu)   > 200) $warnings[] = "Row {$rowNum}: Telugu value is very long.";
-        if (mb_strlen($english) > 500) $warnings[] = "Row {$rowNum}: English value is very long.";
+        if (mb_strlen($english) > 200) $warnings[] = "Row {$rowNum}: English value is very long.";
+        if (mb_strlen($telugu)  > 500) $warnings[] = "Row {$rowNum}: Telugu value is very long.";
 
         // Insert
-        $insertStmt->bind_param('ssssss',
-            $telugu, $english, $transliteration,
-            $part_of_speech, $example_telugu, $example_english
+        $insertStmt->bind_param('sssssss',
+            $english, $telugu, $hindi, $transliteration,
+            $part_of_speech, $example_source, $example_target
         );
 
         if ($insertStmt->execute()) {
             $imported[] = compact(
-                'telugu','english','transliteration',
-                'part_of_speech','example_telugu','example_english'
+                'english','telugu','hindi','transliteration',
+                'part_of_speech','example_source','example_target'
             );
         } else {
             $errors[] = "Row {$rowNum}: Insert failed — " . $insertStmt->error;
@@ -296,7 +306,7 @@ function toBytes($val) {
 
 // ── Word count for display ──
 $wordCount = 0;
-$countResult = $db->query("SELECT COUNT(*) AS total FROM dictionary");
+$countResult = $db->query("SELECT COUNT(*) AS total FROM dictionary_entries");
 if ($countResult) {
     $wordCount = $countResult->fetch_assoc()['total'];
 }
