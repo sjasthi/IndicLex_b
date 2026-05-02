@@ -180,14 +180,70 @@ http://localhost/IndicLex_b/fix_admin.php
 http://localhost/IndicLex_b/test_db.php
 // Delete test_db.php after verifying</pre>
 
-           
+            <div class="alert alert-warning mt-3">
+              ⚠️ Never commit <code>fix_admin.php</code> or <code>test_db.php</code> to GitHub.
+            </div>
           </div>
         </div>
 
-        
+        <!-- Bluehost Deployment -->
+        <div class="admin-card mb-4" id="deploy">
+          <div class="admin-card-header"><h5>🚀 Bluehost Deployment</h5></div>
+          <div class="admin-card-body">
 
+            <h6 class="fw-bold">Step 1 — Create the database on Bluehost</h6>
+            <ol>
+              <li>Log in to Bluehost cPanel</li>
+              <li>Go to <strong>MySQL Databases</strong></li>
+              <li>Create a new database (e.g. <code>user_indiclex</code>)</li>
+              <li>Create a database user and assign <strong>All Privileges</strong></li>
+              <li>Note the host, database name, username, and password</li>
+            </ol>
 
-            
+            <h6 class="fw-bold mt-3">Step 2 — Run the schema</h6>
+            <ol>
+              <li>Open <strong>phpMyAdmin</strong> from cPanel</li>
+              <li>Select your database → <strong>SQL</strong> tab</li>
+              <li>Paste <code>schema.sql</code> → click <strong>Go</strong></li>
+            </ol>
+
+            <h6 class="fw-bold mt-3">Step 3 — Upload files via FTP</h6>
+            <pre class="dev-pre"># Using FileZilla or cPanel File Manager:
+# Upload everything EXCEPT:
+#   vendor/          ← run composer install on server instead
+#   uploads/         ← will be created automatically
+#   test_db.php      ← never deploy this
+#   fix_admin.php    ← never deploy this
+#   .env / secrets   ← never deploy these</pre>
+
+            <h6 class="fw-bold mt-3">Step 4 — Install Composer on Bluehost (SSH)</h6>
+            <pre class="dev-pre">ssh username@yoursite.com
+cd public_html/IndicLex_b
+composer install --no-dev --optimize-autoloader --ignore-platform-reqs</pre>
+
+            <h6 class="fw-bold mt-3">Step 5 — Update db.php for production</h6>
+            <pre class="dev-pre">DEFINE('DATABASE_HOST',     'localhost');
+DEFINE('DATABASE_DATABASE', 'user_indiclex');   // Bluehost DB name
+DEFINE('DATABASE_USER',     'user_dbuser');     // Bluehost DB user
+DEFINE('DATABASE_PASSWORD', 'YourPassword');    // Bluehost DB password</pre>
+
+            <h6 class="fw-bold mt-3">Step 6 — Check .htaccess is working</h6>
+            <p>Verify that <code>mod_rewrite</code> is enabled on Bluehost. Visit <code>/api/search?q=water</code> — if it returns JSON, routing is working.</p>
+
+            <h6 class="fw-bold mt-3">Step 7 — Set file permissions</h6>
+            <pre class="dev-pre">chmod 755 uploads/     # writable for file imports
+chmod 644 .htaccess    # readable only</pre>
+
+            <h6 class="fw-bold mt-3">Step 8 — PHP settings (already in .htaccess)</h6>
+            <pre class="dev-pre">php_value upload_max_filesize  20M
+php_value post_max_size        22M
+php_value max_execution_time   120
+php_value memory_limit         256M
+php_flag  display_errors       Off</pre>
+
+            <div class="alert alert-info mt-3">
+              ℹ️ If <code>display_errors</code> is Off and something breaks on Bluehost, check the error log in cPanel → <strong>Error Logs</strong>.
+            </div>
           </div>
         </div>
 
@@ -257,7 +313,30 @@ http://localhost/IndicLex_b/test_db.php
             <h6 class="fw-bold mt-3">Example request</h6>
             <pre class="dev-pre">GET /api/search?q=water&mode=substring&dict=all&limit=10</pre>
 
-            
+            <h6 class="fw-bold mt-3">Example response (200)</h6>
+            <pre class="dev-pre">{
+  "ok": true,
+  "query": "water",
+  "mode": "substring",
+  "dictionary": { "id": "all", "name": "All dictionaries" },
+  "total": 3,
+  "limit": 10,
+  "offset": 0,
+  "results": [
+    {
+      "id": 42,
+      "word": "water",
+      "telugu": "నీళ్ళు",
+      "hindi": "पानी",
+      "transliteration": "Neellu",
+      "part_of_speech": "noun",
+      "example_source": "నాకు నీళ్ళు కావాలి.",
+      "example_target": "I need water.",
+      "dictionary_id": 1,
+      "dictionary_name": "English-Telugu-Hindi"
+    }
+  ]
+}</pre>
           </div>
         </div>
 
